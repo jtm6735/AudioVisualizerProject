@@ -3,7 +3,7 @@
   Goals:
   
   - Speed control of song controls speed of spinning objects - Slider
-  - Lines(of shapes coming out of center (bezier curves)) bounces with beat - Slider (change these specific objects)
+  - Lines(of shapes coming out of center (bezier curves)) bounces with beat - Button
   - The louder the bass, the larger the objects - Slider
   - Louder the volume, the darker it is, vice versa - Slider
   - Songs - Dropdown Menu
