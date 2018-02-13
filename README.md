@@ -4,8 +4,7 @@
   
   - Speed control of song controls speed of spinning objects - Slider
   - Lines(of shapes coming out of center (bezier curves)) bounces with beat - Button
-  - The louder the bass, the larger the objects - Slider
-  - Louder the volume, the darker it is, vice versa - Slider
+  - Louder the volume, the darker it is, vice versa - Button to turn on
   - Songs - Dropdown Menu
     - Anamanaguchi - Densmore ? Another Winter ? 
     - Runescape / Kanye West
