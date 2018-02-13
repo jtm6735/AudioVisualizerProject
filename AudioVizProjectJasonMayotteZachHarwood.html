@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>Web Audio Visualizer</title>
+	<style>
+	body {
+         background: #eeeeee;
+         font-family: tahoma, verdana, sans serif;
+      }
+
+      canvas {
+        margin-left:10px;
+        margin-top:10px;
+        box-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+        background: black;
+    }
+      
+      #controls{
+      	margin-left:10px;
+        margin-top:10px;
+      }
+	</style>
+    <script>
+    
+    </script>
+    </head>
+<body>
+	<canvas id="canvas" width="640" height="400"></canvas>
+	<div id="controls">
+    <div>
+        // controls speed of song and how fast things spin
+		<label for="songSpeed">Song Speed</label>
+		<input id="songSpeed" type ="range" min ="30" max="200" step ="10" value ="60"/>
+		<span style="float:right" id="sliderResults"></span>
+	</div>
+		<audio controls loop></audio>
+		<label>Track: 
+			<select id="trackSelect" >
+				<option value="Audio/.mp3">New Adventure Theme</option>
+				<option value="Audio/.mp3">Peanuts Theme</option>
+				<option value="Audio/.mp3">The Picard Song</option>
+			</select>
+		</label>
+		<button id="fsButton">Go Full Screen</button><br>
+		<p id="status">Radius</p><br>
+        <span>
+			<label for="invertBox">Invert | </label>
+			<input type="checkbox" id="invertBox">
+		</span>
+        <span>
+            <label for="bezierLine">Lines | </label>
+            <input type="checkbox" id="checkBox">
+        </span>
+        <span>
+            <label for="brightButton">Volume Brightness | </label>
+            <input type="checkbox" id="brightButton">
+        </span>
+
+	</div>
+</body>
+</html>
