@@ -16,4 +16,7 @@
   - Pixels using sound - Checkbox
   - Invert - Checkbox
   - Fullscreen - Button
+  
+  Mouse acts as origin point onclick
+  Mouse goes off screen, origin returns to middle of canvas
 
