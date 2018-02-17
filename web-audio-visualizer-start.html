@@ -35,6 +35,9 @@
 		var canvas,ctx;
 		var invert= false;
 		var tintRed=false,noise=false,lines=false;
+		var TCircles=true,MCircle=false,Triangel=false;
+		var Linear=true,Radial=false,MusicColor=false;
+		var rotation=0;
 
 		var maxRadius=200;
 		
@@ -111,8 +114,31 @@
 			 document.querySelector('#noise').onchange = function(e){
 				 noise = e.target.checked;
 			 }
+			 document.querySelector("#shapeDropDown").onchange = function(e){
+				TCircles=MCircle=Triangel=false;
+				switch(e.target.value){
+					case"TriangleCircles":TCircles=true;
+					break;
+					case"MiddleCircle":MCircle=true;
+					break;
+					case"Triangle":Triangel=true;
+					break;
+				}
+			 }
+			document.querySelector("#fillDropDown").onchange = function(e){
+				Linear=Radial=MusicColor=false;
+				switch(e.target.value){
+					case"LinearGrad":Linear=true;
+					break;
+					case"RadialGrad":Radial=true;
+					break;
+					case"MusicColors":MusicColor=true;
+					break;
+				}
+			}
 
 		}
+		
 		
 		function playStream(audioElement,path){
 			audioElement.src = path;
@@ -208,10 +234,11 @@
 			
 			// loop through the data and draw!
 			for(var i=0; i<data.length; i++) { 
-				ctx.fillStyle = 'rgba(0,255,0,0.6)'; 
+				ctx.save();
+				//ctx.fillStyle = 'rgba(0,255,0,0.6)'; 
 				var percent=data[i]/255;
 				var circleRadius=percent*maxRadius;
-				ctx.strokeStyle="green";
+				
 				//draw inverted bars 
 				//ctx.fillRect(640-i*(barWidth+barSpacing),topSpacing+256-data[i]-20,barWidth,barHeight);
 				// ctx.beginPath();
@@ -224,10 +251,74 @@
 				// remember we have to draw our bars left-to-right and top-down
 				//ctx.fillRect(i * (barWidth + barSpacing),topSpacing + 256-data[i],barWidth,barHeight); 
 				
-				//red-ish circles 
+				if(Linear){
+					
+					ctx.fillStyle=rainbowGrad();
+					ctx.strokeStyle="black";
+				}
+				else if(Radial){
+					ctx.fillStyle=radialRainbowGrad();
+				}
+				else if(MusicColor){
+					//ctx.strokeStyle="white";
+					ctx.fillStyle=mColor(data[i],data[i-1],data[i+2]);
+					
+				}
+
+
+				if(TCircles){
+
+				ctx.beginPath();
+				//ctx.fillStyle=makeColor(0,0,255,.10-percent/10.0);
+				//ctx.strokeStyle="green"
+				ctx.arc(canvas.width/5.2,canvas.height/5,circleRadius*1.3,1.05,2*Math.PI,false);
+				ctx.fill();
+				ctx.stroke();
+				ctx.closePath();
+
+				ctx.beginPath();
+				//ctx.fillStyle=makeColor(0,0,255,.10-percent/10.0);
+				//ctx.strokeStyle="green"
+				ctx.arc(canvas.width/1.2,canvas.height/5,circleRadius*1.3,2.1,1*Math.PI,true);
+				ctx.fill();
+				ctx.stroke();
+				ctx.closePath();
+
+
+				ctx.beginPath();
+				//ctx.fillStyle=makeColor(0,0,255,.10-percent/10.0);
+				//ctx.strokeStyle="green"
+				ctx.arc(canvas.width/1.97,canvas.height/.93,circleRadius*1.3,5.25,1.33*Math.PI,false);
+				ctx.fill();
+				ctx.stroke();
+				ctx.closePath();
+				}
+
+				else if(MCircle){
+
+				ctx.beginPath();
+				//ctx.fillStyle=mColor(data[i],data[i-1],data[i+1]);
+				ctx.strokeStyle="red";
+				ctx.arc(canvas.width/2,canvas.height/2,circleRadius*1.5,0,2*Math.PI,false);
+				ctx.fill();
+				ctx.stroke();
+				ctx.closePath();
+				}
+
+				else if(Triangel){
+				ctx.beginPath();
+				ctx.fillStyle=makeColor(200,0,200,.10-percent/10.0);
+				ctx.moveTo(320, 200);
+				ctx.lineTo(percent*20,percent);
+				ctx.lineTo(430+(percent/10),100+(percent/10));
+				ctx.lineTo(320+(percent/10),220+(percent/10));
+				ctx.fill();
+				ctx.closePath();
+				}
+
+				//drawTriangle(percent);
 			
-	
-			     
+		
 				// //blue-ish circles, bigger, more transparent
 				// ctx.beginPath();
 				// ctx.fillStyle=makeColor(0,0,255,.10-percent/5.0);
@@ -237,31 +328,7 @@
 				// ctx.stroke();
 				// ctx.closePath();
 
-				ctx.beginPath();
-				ctx.fillStyle=makeColor(0,0,255,.10-percent/10.0);
-				ctx.strokeStyle="green"
-				ctx.arc(canvas.width/5.2,canvas.height/5,circleRadius*1.3,1.05,2*Math.PI,false);
-				ctx.fill();
-				ctx.stroke();
-				ctx.closePath();
-
-				ctx.beginPath();
-				ctx.fillStyle=makeColor(0,0,255,.10-percent/10.0);
-				ctx.strokeStyle="green"
-				ctx.arc(canvas.width/1.2,canvas.height/5,circleRadius*1.3,2.1,1*Math.PI,true);
-				ctx.fill();
-				ctx.stroke();
-				ctx.closePath();
-
-
-				ctx.beginPath();
-				ctx.fillStyle=makeColor(0,0,255,.10-percent/10.0);
-				ctx.strokeStyle="green"
-				ctx.arc(canvas.width/1.97,canvas.height/.93,circleRadius*1.3,5.25,1.33*Math.PI,false);
-				ctx.fill();
-				ctx.stroke();
-				ctx.closePath();
-
+				
 				
 				
 				// //yellow-ish circles, smaller 
@@ -272,31 +339,68 @@
 				// ctx.fill();
 				// ctx.closePath();
 				// ctx.restore();
-				drawTriangle(percent);	
+				//drawTriangle(percent);	
 			}
 			manipulatePixels();
-			
+			ctx.restore();
 		} 
 
-		function drawTriangle(percent){//testing spot light
+			function drawTriangle(percent){//testing spot light
+			//rotation+=5;
 			ctx.beginPath();
 			ctx.fillStyle=makeColor(200,0,200,.10-percent/10.0);
-			ctx.moveTo(640, 400);
-			ctx.lineTo(580*percent, -120*percent);
-			ctx.lineTo(430*percent,-200*percent);
-			ctx.lineTo(520*percent,-200*percent);
+			ctx.moveTo(320, 200);
+			ctx.lineTo(320, 100);
+			ctx.lineTo(430,100);
+			ctx.lineTo(320,220);
 			ctx.fill();
 			ctx.closePath();
+			ctx.rotate(rotation* Math.PI / 180);
+			if(rotation>=Math.PI / 180){
+				rotation=0;
+			}
 			
-
-
+			
 		}
+
+		
+			
 		
 		// HELPER
 		function makeColor(red, green, blue, alpha){
    			var color='rgba('+red+','+green+','+blue+', '+alpha+')';
    			return color;
 		}
+		
+		function rainbowGrad(){
+			var grad = ctx.createLinearGradient(0, 0, canvas.height,.04);	
+				grad.addColorStop(0, 'red');
+				grad.addColorStop(1 / 6, 'orange');
+				grad.addColorStop(2 / 6, 'yellow');
+				grad.addColorStop(3 / 6, 'green')
+				grad.addColorStop(4 / 6, 'aqua');
+				grad.addColorStop(5 / 6, 'blue');
+				grad.addColorStop(1, 'purple');
+				return grad;
+		}
+		function radialRainbowGrad(){
+			var grad=ctx.createRadialGradient(canvas.width/2,canvas.height/2,0,canvas.width/2,canvas.height/2,canvas.width,0);
+
+          		grad.addColorStop(0, 'red');
+				grad.addColorStop(1 / 6, 'orange');
+				grad.addColorStop(2 / 6, 'yellow');
+				grad.addColorStop(3 / 6, 'green')
+				grad.addColorStop(4 / 6, 'aqua');
+				grad.addColorStop(5 / 6, 'blue');
+				grad.addColorStop(1, 'purple');
+                return grad;
+            }
+                            
+
+		function mColor(v1,v2,v3){
+            var rgb='rgba('+v1%255+","+v2%255+","+v3%255+",.07)";
+			return rgb;
+        }
 		
 		 // FULL SCREEN MODE
 		function requestFullscreen(element) {
@@ -329,6 +433,24 @@
 				<option value="media/The Picard Song.mp3">The Picard Song</option>
 			</select>
 		</label>
+
+		<label>Shapes:
+			<select id="shapeDropDown" >
+				<option value="TriangleCircles" selected>trianlge made with circles</option>
+				<option value="MiddleCircle">singlular circle in the middle</option>
+				<option value="Triangle">triangel</option>
+			</select>
+		</label>
+<p>
+		<label>fillstyle:
+			<select id="fillDropDown" >
+				<option value="LinearGrad" selected>Linear Gradient</option>
+				<option value="MusicColors">colored with sound data</option>
+				<option value="RadialGrad">Radial Gradient</option>
+			</select>
+		</label>
+</p>
+
 		
 		<label for="slider1">circleRadius</label>
 			<input id="slider1" type ="range" min ="0.0" max="200.0" step ="1.0" value ="200"/>
