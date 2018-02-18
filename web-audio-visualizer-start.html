@@ -38,6 +38,9 @@
 		var TCircles=true,MCircle=false,Triangel=false;
 		var Linear=true,Radial=false,MusicColor=false;
 		var rotation=0;
+		var delayAmount=0;
+		var delayNode;
+
 
 		var maxRadius=200;
 		
@@ -73,6 +76,9 @@
 			
 			// create an analyser node
 			analyserNode = audioCtx.createAnalyser();
+			// create DelayNode instance
+			delayNode = audioCtx.createDelay();
+			delayNode.delayTime.value = delayAmount;
 			
 			/*
 			We will request NUM_SAMPLES number of samples or "bins" spaced equally 
@@ -88,10 +94,14 @@
 			
 			// this is where we hook up the <audio> element to the analyserNode
 			sourceNode = audioCtx.createMediaElementSource(audioElement); 
-			sourceNode.connect(analyserNode);
-			
-			// here we connect to the destination i.e. speakers
+			//sourceNode.connect(analyserNode);
+			// connect source node directly to speakers so we can hear the unaltered source in this channel
+			sourceNode.connect(audioCtx.destination);
+			// this channel will play and visualize the delay
+			sourceNode.connect(delayNode);
+			delayNode.connect(analyserNode);
 			analyserNode.connect(audioCtx.destination);
+			
 			return analyserNode;
 		}
 		
@@ -108,12 +118,18 @@
 			 	 document.querySelector("#sliderResults").innerHTML = e.target.value;
 				 maxRadius=e.target.value;
 			 };
+			 document.querySelector("#slider2").onchange = function(e){
+			 	//console.log("checked=" + e.target.value);
+			 	 document.querySelector("#sliderResults2").innerHTML = e.target.value;
+				 delayAmount=e.target.value;
+			 };
 			 document.querySelector('#invert').onchange = function(e){
 				invert= e.target.checked;
-			 }
+			 };
 			 document.querySelector('#noise').onchange = function(e){
 				 noise = e.target.checked;
-			 }
+			 };
+			 
 			 document.querySelector("#shapeDropDown").onchange = function(e){
 				TCircles=MCircle=Triangel=false;
 				switch(e.target.value){
@@ -235,6 +251,7 @@
 			// loop through the data and draw!
 			for(var i=0; i<data.length; i++) { 
 				ctx.save();
+				delayNode.delayTime.value = delayAmount;
 				//ctx.fillStyle = 'rgba(0,255,0,0.6)'; 
 				var percent=data[i]/255;
 				var circleRadius=percent*maxRadius;
@@ -268,6 +285,7 @@
 
 				if(TCircles){
 
+				ctx.lineWidth=2;
 				ctx.beginPath();
 				//ctx.fillStyle=makeColor(0,0,255,.10-percent/10.0);
 				//ctx.strokeStyle="green"
@@ -373,7 +391,7 @@
 		}
 		
 		function rainbowGrad(){
-			var grad = ctx.createLinearGradient(0, 0, canvas.height,.04);	
+			var grad = ctx.createLinearGradient(0, 0, canvas.height,canvas.width/2);	
 				grad.addColorStop(0, 'red');
 				grad.addColorStop(1 / 6, 'orange');
 				grad.addColorStop(2 / 6, 'yellow');
@@ -448,6 +466,12 @@
 				<option value="MusicColors">colored with sound data</option>
 				<option value="RadialGrad">Radial Gradient</option>
 			</select>
+		</label>
+</p>
+<p>
+		<label>Delay:
+			<input id="slider2" type="range" min="0.0" max="1.0" value="0" step="0.1">
+			<span  id="sliderResults2">0</span>
 		</label>
 </p>
 
