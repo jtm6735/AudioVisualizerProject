@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>Web Audio Visualizer</title>
+	<style>
+	body {
+         background: #eeeeee;
+         font-family: tahoma, verdana, sans serif;
+      }
+
+      canvas {
+        margin-left:10px;
+        margin-top:10px;
+        box-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+        background: black;
+    }
+      
+      #controls{
+      	margin-left:10px;
+        margin-top:10px;
+      }
+	</style>
+    <script>
+        
+        (function(){
+            "use strict";
+            
+            var numSample = 256;
+            var song1;
+            var song2;
+            var song3;
+            var audioVar;
+            var analyserNode;
+            var canvas, ctx;
+            var songSpeed;
+            var lineBeat = false;
+            var loudOpacity = false;
+            var backgroundObjects;
+            var pixelated;
+            var invert = false;
+            
+            
+            function init(){
+                // set up canvas
+                canvas.document.querySelector('canvas');
+                ctx = canvas.getContext("2d");
+                
+                // get reference to <audio> element on page
+                audioVar = document.querySelector('audio');
+                
+                // call function and get an analyser node
+                analyserNode = createWebAudio(audioVar);
+                
+                setupUI();
+                
+                // play default song into audio element
+                playStream(audioVar,song1);
+                
+                // start animation
+                update();
+            }
+            
+            function createWebAudio(audioVar){
+                var audioCtx, analyserNode, sourceNode;
+                
+                // create new AudioContext
+                audioCtx = new(window.AudioContext || window.webkitAudioContext);
+                
+                // create analyser node
+                analyserNode = audioCtx.createAnalyser();
+                
+                analyserNode.fftSize = numSample;
+                
+                // hook up the <audio> element to the analyserNode
+                sourceNode = audioCtx.createMediaElementSource(audioElement);
+                sourceNode.connect(analyserNode);
+                
+                // connect to the destination with speakers
+                analyserNode.connect(audioCtx.destination);
+                return analyserNode;
+            }
+            
+            function setupUI(){
+                document.querySelector("#trackSelect").onchange = function(e){
+                    playStream(audioElement,e.target.value);
+                };
+                
+                document.querySelector("#fsButton").onclick = function(){
+                    requestFullscreen(canvas);
+                };
+                
+                document.querySelector("#songSpeed").onchange = function(e){
+                    document.querySelector("sliderResults").innerHTML = e.target.value;
+                    songSpeed = e.target.value;
+                }
+                
+            }
+            
+            function playStream(audioElement, path){
+                audioElement.src = path;
+                audioElement.play();
+                audioElement.volume = 0.2;
+                document.querySelector('#status').innerHTML = "Now playing: " + path;
+            }
+        })();
+        
+    </script>
+    </head>
+<body>
+	<canvas id="canvas" width="640" height="400"></canvas>
+	<div id="controls">
+    <div>
+        // controls speed of song and how fast things spin
+		<label for="songSpeed">Song Speed</label>
+		<input id="songSpeed" type ="range" min ="50" max="125" step ="10" value ="75"/>
+		<span style="float:right" id="sliderResults"></span>
+	</div>
+		<audio controls loop></audio>
+		<label>Track: 
+			<select id="trackSelect" >
+				<option value="Audio/.mp3">New Adventure Theme</option>
+				<option value="Audio/.mp3">Peanuts Theme</option>
+				<option value="Audio/.mp3">The Picard Song</option>
+			</select>
+		</label>
+		<button id="fsButton">Go Full Screen</button><br>
+		<p id="status">Song</p><br>
+        <span>
+			<label for="invertBox">Invert | </label>
+			<input type="checkbox" id="invertBox">
+		</span>
+        <span>
+            <label for="bezierLine">Lines | </label>
+            <input type="checkbox" id="checkBox">
+        </span>
+        <span>
+            <label for="brightButton">Volume Brightness | </label>
+            <input type="checkbox" id="brightButton">
+        </span>
+
+	</div>
+</body>
+</html>
