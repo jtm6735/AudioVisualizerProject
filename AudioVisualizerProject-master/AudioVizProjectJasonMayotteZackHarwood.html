@@ -38,9 +38,10 @@
 		var audioElement;
 		var analyserNode;
 		var canvas,ctx;
+        var circleLines = false;
 		var invert= false;
-		var tintRed=false,noise=false,lines=false;
-		var TCircles=true,MCircle=false,Triangel=false;
+		var waveForm=false,noise=false;
+		var TCircles=true,MCircle=false,Combination=false;
 		var Linear=true,Radial=false,MusicColor=false;
 		var rotation=0;
 		var delayAmount=0;
@@ -69,7 +70,7 @@
 			update();
 		}
 		
-		
+		/// Create the audio nodes for us to interact with
 		function createWebAudioContextWithAnalyserNode(audioElement) {
 			var audioCtx, analyserNode, sourceNode;
 			// create new AudioContext
@@ -79,6 +80,7 @@
 			
 			// create an analyser node
 			analyserNode = audioCtx.createAnalyser();
+            
 			// create DelayNode instance
 			delayNode = audioCtx.createDelay();
 			delayNode.delayTime.value = delayAmount;
@@ -101,42 +103,67 @@
 			return analyserNode;
 		}
 		
+        // Set up the interactivity between the UI and the canvas
 		function setupUI(){
+            // Controls which song is playing
 			document.querySelector("#trackSelect").onchange = function(e){
 				playStream(audioElement,e.target.value);
 			};
 			
+            // Determines if the visualizer will be fullscreen or not
 			document.querySelector("#fsButton").onclick = function(){
 				requestFullscreen(canvas);
 			};
+            
+            // Determines the radius for the circles in the visualizer
 			document.querySelector("#slider1").onchange = function(e){
 			 	//console.log("checked=" + e.target.value);
 			 	 document.querySelector("#sliderResults").innerHTML = e.target.value;
 				 maxRadius=e.target.value;
 			 };
-			 document.querySelector("#slider2").onchange = function(e){
+            
+            // Determines the delay on the visualizer
+            document.querySelector("#slider2").onchange = function(e){
 			 	//console.log("checked=" + e.target.value);
 			 	 document.querySelector("#sliderResults2").innerHTML = e.target.value;
 				 delayAmount=e.target.value;
 			 };
-			 document.querySelector('#invert').onchange = function(e){
+            
+            // Gives checkbox ability to invert the screen
+            document.querySelector('#invert').onchange = function(e){
 				invert= e.target.checked;
 			 };
-			 document.querySelector('#noise').onchange = function(e){
+            
+            // Gives checkbox ability to apply noise to the song data
+            document.querySelector('#noise').onchange = function(e){
 				 noise = e.target.checked;
 			 };
+            
+            // Gives checkbox ability to draw the curved lines on the screen
+            document.querySelector('#lines').onchange = function(e){
+                circleLines = e.target.checked;
+            }
+            
+            // Gives checkbox ability to add waveform to the screen
+            document.querySelector('#waveForm').onchange = function(e){
+				waveForm= e.target.checked;
+			 };
+            
 			 
-			 document.querySelector("#shapeDropDown").onchange = function(e){
-				TCircles=MCircle=Triangel=false;
+            // Determines which shapes are drawn in the visualizer
+            document.querySelector("#shapeDropDown").onchange = function(e){
+				TCircles=MCircle=Combination=false;
 				switch(e.target.value){
 					case"TriangleCircles":TCircles=true;
 					break;
 					case"MiddleCircle":MCircle=true;
 					break;
-					case"Triangle":Triangel=true;
+					case"Combination":Combination=true;
 					break;
 				}
 			 }
+            
+            // Determines the color used via a dropdown menu
 			document.querySelector("#fillDropDown").onchange = function(e){
 				Linear=Radial=MusicColor=false;
 				switch(e.target.value){
@@ -151,7 +178,7 @@
 
 		}
 		
-		
+		// Function will play a song depending on what is selected
 		function playStream(audioElement,path){
 			audioElement.src = path;
 			audioElement.play();
@@ -159,202 +186,125 @@
 			document.querySelector('#status').innerHTML = "Now playing: " + path;
 		}
 
+        // Functions gets data in order to mess with the pixel data
+        // Invert and Noise changes are implemented within this function
 		function manipulatePixels(){
-			// i)Get all of the rgba pixel data of the canvas by grabbing the 
-			//Image Data Object
-			//https://developer.mozilla.org/en-US/docs/Web/API/ImageData
+            // Obtains all of teh pixel data
 			var imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
-			//ii)imageData.data is an 8-bit typed array-values range from 0-255
-			//imageData.data contains 4 values per pixel: 4 x canvas.width x
-			//canvas.height=1024000 values!
-			//we’re looping through this 60FPS-wow!
 			var data=imageData.data;
 			var length=data.length;
 			var width=imageData.width;
-			//iii)Iterate through each pixel//we step by 4 so that we can manipulate 1 pixel per iteration
-			//data[i]is the red value
-			//data[i+1]is the green value
-			//data[i+2]is the blue value
-			//data[i+3]is the alpha value 
 			for(var i=0;i<length;i+=4){
-				//iv)increase red value only 
-				// if(tintRed){
-				// 	//just the red channel this time
-				// 	data[i]=data[i]+100;
-				// }
 				//v)invert every color channel 
 				if(invert){
 					var red=data[i],green=data[i+1],blue=data[i+2];
 					data[i]=255-red;//set red value 
 					data[i+1]=255-green;//set blue value 
 					data[i+2]=255-blue;//set green value
-
-					//data [i+3] is the alpha but we’re leaving that alone
 				}
 					//vi)noise
 				if(noise&&Math.random()<.40){
-					//data[i]=data[i+1]=data[i+2]=128; //gray noise
-					//data[i]=data[i+1]=data[i+2]=255; //or white noise
 					data[i]=data[i+1]=data[i+2]=0; //or black noise
 
 					}
-					//vii)draw 2-pixel lines every 50 rows
-					// if(lines){
-					// 	var row=Math.floor(i/4/width);
-					// 	if(row%50==0){
-					// 		//this row
-					// 		data[i]=data[i+1]=data[i+2]=data[i+3]=255;
-							
-					// 		//next row 
-					// 		data[i+(width*4)]=
-					// 		data[i+(width*4)+1]=
-					// 		data[i+(width*4)+2]=
-					// 		data[i+(width*4)+3]=255;
-					// 	}
-					//}
 				}
 				//put the modified data back on the canvas
 				ctx.putImageData(imageData,0,0);
 		}
 		
+        // Function calls animation to happen every 1/60 of a second
 		function update() { 
 			// this schedules a call to the update() method in 1/60 seconds
 			requestAnimationFrame(update);
-			
-			/*
-				Nyquist Theorem
-				http://whatis.techtarget.com/definition/Nyquist-Theorem
-				The array of data we get back is 1/2 the size of the sample rate 
-			*/
-			
+
 			// create a new array of 8-bit integers (0-255)
 			var data = new Uint8Array(NUM_SAMPLES/2); 
 			
-			// populate the array with the frequency data
-			// notice these arrays can be passed "by reference" 
-			analyserNode.getByteFrequencyData(data);
-		
-			// OR
-			//analyserNode.getByteTimeDomainData(data); // waveform data
-			
-			// DRAW!
-			ctx.clearRect(0,0,800,600);  
+			// Clears the canvas every frame so that shapes are not constantly being drawn over themselves
+			ctx.clearRect(0,0,880,640);  
 			var barWidth = 4;
 			var barSpacing = 1;
 			var barHeight = 100;
 			var topSpacing = 50;
 			
-			// loop through the data and draw!
-			for(var i=0; i<data.length; i++) { 
+			// Loop draws each time it is ran through
+			for(var i=0; i<data.length-35; i++) { 
 				ctx.save();
+                // Uses waveform to draw
+                if(waveForm){
+                    ctx.save();
+                    analyserNode.getByteTimeDomainData(data)*10;
+                    ctx.globalAlpha=.6;
+                    ctx.lineWidth=40;
+                    ctx.restore();
+                }
+                else{
+                    analyserNode.getByteFrequencyData(data);
+                }
 				delayNode.delayTime.value = delayAmount;
 				//ctx.fillStyle = 'rgba(0,255,0,0.6)'; 
 				var percent=data[i]/255;
 				var circleRadius=percent*maxRadius;
-				
-				//draw inverted bars 
-				//ctx.fillRect(640-i*(barWidth+barSpacing),topSpacing+256-data[i]-20,barWidth,barHeight);
-				// ctx.beginPath();
-				// ctx.moveTo(320,400);
-				// ctx.lineTo((i * (barWidth + barSpacing)),(256-data[i]));
-				// ctx.stroke();
-				// ctx.closePath();
 
-				// the higher the amplitude of the sample (bin) the taller the bar
-				// remember we have to draw our bars left-to-right and top-down
-				//ctx.fillRect(i * (barWidth + barSpacing),topSpacing + 256-data[i],barWidth,barHeight); 
-				
+				// Changes the fill color to a rainbow gradient
+                // Stroke style is set to black with opacity
 				if(Linear){
 					
 					ctx.fillStyle=rainbowGrad();
-					ctx.strokeStyle="black";
+					ctx.strokeStyle=makeColor(0,0,0,.5);
+                    
 				}
+                
+                // Changes the fill color to partial of a radial gradient
+                // Stroke style is set to black with opacity
 				else if(Radial){
+                   
 					ctx.fillStyle=radialRainbowGrad();
+                    ctx.strokeStyle=makeColor(0,0,0,.5);
 				}
+                
+                // Changes the fill color to fit the song data
+                // Stroke is set to a faded red
 				else if(MusicColor){
+                    
+                    ctx.strokeStyle=makeColor(255,0,0,.5);
 					//ctx.strokeStyle="white";
 					ctx.fillStyle=mColor(data[i],data[i-1],data[i+2]);
-					
 				}
 
-
+                // Changes shapes drawn to the triangle circles
 				if(TCircles){
-
-				ctx.lineWidth=2;
-				ctx.beginPath();
-				//ctx.fillStyle=makeColor(0,0,255,.10-percent/10.0);
-				//ctx.strokeStyle="green"
-				ctx.arc(canvas.width/5.2,canvas.height/5,circleRadius*1.3,1.05,2*Math.PI,false);
-				ctx.fill();
-				ctx.stroke();
-				ctx.closePath();
-
-				ctx.beginPath();
-				//ctx.fillStyle=makeColor(0,0,255,.10-percent/10.0);
-				//ctx.strokeStyle="green"
-				ctx.arc(canvas.width/1.2,canvas.height/5,circleRadius*1.3,2.1,1*Math.PI,true);
-				ctx.fill();
-				ctx.stroke();
-				ctx.closePath();
-
-
-				ctx.beginPath();
-				//ctx.fillStyle=makeColor(0,0,255,.10-percent/10.0);
-				//ctx.strokeStyle="green"
-				ctx.arc(canvas.width/1.97,canvas.height/.93,circleRadius*1.3,5.25,1.33*Math.PI,false);
-				ctx.fill();
-				ctx.stroke();
-				ctx.closePath();
+                    tCircleDraw(circleRadius);
 				}
 
+                // Changes shapes drawns to the single circle
 				else if(MCircle){
-
-				ctx.beginPath();
-				//ctx.fillStyle=mColor(data[i],data[i-1],data[i+1]);
-				ctx.strokeStyle="red";
-				ctx.arc(canvas.width/2,canvas.height/2,circleRadius*1.5,0,2*Math.PI,false);
-				ctx.fill();
-				ctx.stroke();
-				ctx.closePath();
+                    mCircleDraw(circleRadius);
 				}
-
-				else if(Triangel){
-				ctx.beginPath();
-				ctx.fillStyle=makeColor(200,0,200,.10-percent/10.0);
-				ctx.moveTo(320, 200);
-				ctx.lineTo(percent*20,percent);
-				ctx.lineTo(430+(percent/10),100+(percent/10));
-				ctx.lineTo(320+(percent/10),220+(percent/10));
-				ctx.fill();
-				ctx.closePath();
+                
+                // Draws both of the shapes at the same time
+				else if(Combination){
+                    tCircleDraw(circleRadius);
+                    mCircleDraw(circleRadius-30);
 				}
+                
+                // Draws the outer circle of crossing lines 
+                if(circleLines){
+                ctx.save();
+                ctx.translate(canvas.width/2,canvas.height/2);
+                ctx.rotate(i*2*Math.PI/(data.length-35)+rotation);
+                ctx.strokeStyle=makeColor(0,100,200,.7);
+                ctx.lineWidth=2;
+                ctx.beginPath();
+                ctx.moveTo(canvas.height/2,canvas.width/2);
+                ctx.lineTo(50,-4000);
+                ctx.stroke();
+                ctx.restore();
+                }
 
-				//drawTriangle(percent);
-			
-		
-				// //blue-ish circles, bigger, more transparent
-				// ctx.beginPath();
-				// ctx.fillStyle=makeColor(0,0,255,.10-percent/5.0);
-				// ctx.strokeStyle="green"
-				// ctx.arc(canvas.width/2,canvas.height/2,circleRadius*1.3,0,2*Math.PI,false);
-				// ctx.fill();
-				// ctx.stroke();
-				// ctx.closePath();
-
-				
-				
-				
-				// //yellow-ish circles, smaller 
-				// ctx.save();
-				// ctx.beginPath();
-				// ctx.fillStyle=makeColor(200,200,0,.5-percent/5.0);
-				// ctx.arc(canvas.width/2,canvas.height/2,circleRadius*.50,0,2*Math.PI,false);
-				// ctx.fill();
-				// ctx.closePath();
-				// ctx.restore();
-				//drawTriangle(percent);	
 			}
+            // Rotation has them move around
+            rotation-=0.005;
 			manipulatePixels();
 			ctx.restore();
 		} 
@@ -373,19 +323,16 @@
 			if(rotation>=Math.PI / 180){
 				rotation=0;
 			}
-			
-			
 		}
 
-		
-			
-		
 		// HELPER
+        // Function allows for making colors to be used in other functions
 		function makeColor(red, green, blue, alpha){
    			var color='rgba('+red+','+green+','+blue+', '+alpha+')';
    			return color;
 		}
 		
+        // Creates the rainbow gradient
 		function rainbowGrad(){
 			var grad = ctx.createLinearGradient(0, 0, canvas.height,canvas.width/2);	
 				grad.addColorStop(0, 'red');
@@ -397,26 +344,25 @@
 				grad.addColorStop(1, 'purple');
 				return grad;
 		}
+        
+        // Creates the radial rainbow gradient
 		function radialRainbowGrad(){
 			var grad=ctx.createRadialGradient(canvas.width/2,canvas.height/2,0,canvas.width/2,canvas.height/2,canvas.width,0);
-
           		grad.addColorStop(0, 'red');
 				grad.addColorStop(1 / 6, 'orange');
 				grad.addColorStop(2 / 6, 'yellow');
 				grad.addColorStop(3 / 6, 'green')
 				grad.addColorStop(4 / 6, 'aqua');
-				grad.addColorStop(5 / 6, 'blue');
-				grad.addColorStop(1, 'purple');
                 return grad;
             }
                             
-
+        // Creates a color using passed in data
 		function mColor(v1,v2,v3){
             var rgb='rgba('+v1%255+","+v2%255+","+v3%255+",.07)";
 			return rgb;
         }
 		
-		 // FULL SCREEN MODE
+		 // Allows for the use of full screen
 		function requestFullscreen(element) {
 			if (element.requestFullscreen) {
 			  element.requestFullscreen();
@@ -427,17 +373,65 @@
 			} else if (element.webkitRequestFullscreen) {
 			  element.webkitRequestFullscreen();
 			}
-			// .. and do nothing if the method is not supported
 		};
+        
+        // Function is what actually draws the triangle circles
+        function tCircleDraw(radius){
+                ctx.save();
+				ctx.lineWidth=2;
+				ctx.beginPath();
+				//ctx.fillStyle=makeColor(0,0,255,.10-percent/10.0);
+				//ctx.strokeStyle="green"
+				ctx.arc(canvas.width/5.2,canvas.height/5,radius*1.3,1.05,2*Math.PI,false);
+				ctx.fill();
+				ctx.stroke();
+				ctx.closePath();
+
+				ctx.beginPath();
+				//ctx.fillStyle=makeColor(0,0,255,.10-percent/10.0);
+				//ctx.strokeStyle="green"
+				ctx.arc(canvas.width/1.2,canvas.height/5,radius*1.3,2.1,1*Math.PI,true);
+				ctx.fill();
+				ctx.stroke();
+				ctx.closePath();
+
+
+				ctx.beginPath();
+				//ctx.fillStyle=makeColor(0,0,255,.10-percent/10.0);
+				//ctx.strokeStyle="green"
+				ctx.arc(canvas.width/1.97,canvas.height/1.05,radius*1.3,5.25,1.33*Math.PI,false);
+				ctx.fill();
+				ctx.stroke();
+				ctx.closePath();
+                ctx.restore();
+        }
 		
-		
+        // Funcion is what draws the middle cirle
+        function mCircleDraw(radius){
+                ctx.save();
+				ctx.beginPath();
+				//ctx.fillStyle=mColor(data[i],data[i-1],data[i+1]);
+				
+				ctx.arc(canvas.width/2,canvas.height/2,radius*1.5,0,2*Math.PI,false);
+				ctx.fill();
+				ctx.stroke();
+				ctx.closePath();
+                ctx.restore();
+        }
+        
+        // Function is what draws colors based on the sound data
+        function musicColDraw(){
+            ctx.strokeStyle=makeColor(255,0,0,.5);
+            ctx.fillStyle=mColor(data[i],data[i-1],data[i+2]);
+        }
+        
 		window.addEventListener("load",init);
 	}());
 		
 	</script>
 </head>
 <body>
-	<canvas id="canvas" width="680" height="440"></canvas>
+	<canvas id="canvas" width="880" height="640"></canvas>
 	<div id="controls">
 		<audio controls loop></audio><br>
 		<label>Track: 
@@ -454,7 +448,7 @@
 			<select id="shapeDropDown" >
 				<option value="TriangleCircles" selected>trianlge made with circles</option>
 				<option value="MiddleCircle">singlular circle in the middle</option>
-				<option value="Triangle">triangel</option>
+				<option value="Combination">Combination</option>
 			</select>
 		</label>
 <p>
@@ -468,15 +462,15 @@
 </p>
 <p>
 		<label>Delay:
-			<input id="slider2" type="range" min="0.0" max="1.0" value="0" step="0.1">
+			<input id="slider2" type="range" min="0.0" max="0.5" value="0" step="0.01">
 			<span  id="sliderResults2">0</span>
 		</label>
 </p>
 
 		
 		<label for="slider1">circleRadius</label>
-			<input id="slider1" type ="range" min ="0.0" max="200.0" step ="1.0" value ="200"/>
-			<span  id="sliderResults">200</span><br>
+			<input id="slider1" type ="range" min ="150.0" max="300.0" step ="1.0" value ="225"/>
+			<span  id="sliderResults">225</span><br>
 
 		<button id="fsButton">Go Full Screen</button><br>
 		
@@ -485,6 +479,8 @@
 		 <!--<input id="tintRed" type="checkbox">Tint Red-->
 		<input id="noise" type="checkbox">Noise
 		<!--<input id="lines" type="checkbox">Lines -->
+        <input id="lines" type="checkbox">Circling Lines
+        <input id="waveForm"type="checkbox">Wave form
 		</p>
 	</div>
 </body>
